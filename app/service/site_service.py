@@ -10,9 +10,9 @@ from app.dao.site_dao import SiteDao
 class SiteService:
 
     @staticmethod
-    def get_all_site(query: apiproto.SiteQuery) -> apiproto.SiteList:
+    def get_sites(query: apiproto.SiteQuery) -> apiproto.SiteList:
         with get_database_session() as session:
-            total, result = SiteDao.get_all_site(session, query.page, query.page_size)
+            total, result = SiteDao.get_sites(session, query.current, query.pageSize)
             if total == 0:
                 return apiproto.SiteList()
             records_list: list[apiproto.Site] = []
@@ -34,18 +34,6 @@ class SiteService:
                 )
                 records_list.append(tmp)
         return apiproto.SiteList(record_total=total, record_list=records_list)
-
-    @staticmethod
-    def get_all_site_rss() -> list[apiproto.SiteRss]:
-        with get_database_session() as session:
-            result = SiteDao.get_all_site_rss(session)
-            return [apiproto.SiteRss(
-                id=item.id,
-                site_id=item.site_id,
-                alias=item.alias,
-                url=item.url,
-                latest_pub=item.latest_pub,
-            ) for item in result]
 
     @staticmethod
     def get_site_by_id(id: int) -> apiproto.Site:
@@ -108,6 +96,18 @@ class SiteService:
             if site is None:
                 raise BizError('站点不存在')
             SiteDao.delete_site(session, site)
+
+    @staticmethod
+    def get_site_rss(site_id: int = None) -> list[apiproto.SiteRss]:
+        with get_database_session() as session:
+            result = SiteDao.get_site_rss(session, site_id)
+            return [apiproto.SiteRss(
+                id=item.id,
+                site_id=item.site_id,
+                alias=item.alias,
+                url=item.url,
+                latest_pub=item.latest_pub,
+            ) for item in result]
 
     @staticmethod
     def update_rss_latest_pub(site_rss_id: int, latest_pub: datetime):

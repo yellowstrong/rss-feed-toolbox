@@ -4,8 +4,8 @@ from typing import Optional
 
 
 class SiteQuery(BaseModel):
-    page: Optional[int] = Field(default=1, description="当前页", examples=["1"])
-    page_size: Optional[int] = Field(default=10, description="每页数量", examples=["10"])
+    current: Optional[int] = Field(default=1, description="当前页", examples=["1"])
+    pageSize: Optional[int] = Field(default=10, description="每页数量", examples=["10"])
 
 
 class SiteRss(BaseModel):

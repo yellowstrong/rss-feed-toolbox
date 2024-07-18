@@ -11,6 +11,22 @@ from app.utils import hashing
 class AuthService:
 
     @staticmethod
+    def register(user: apiproto.User):
+        with get_database_session() as session:
+            exist_user = UserDao.get_user_by_username(session, user.username)
+            if exist_user is not None:
+                raise BizError('用户名已存在')
+            user_model = models.User(
+                id=user.id,
+                username=user.username,
+                password=hashing.get_password_hash(user.password),
+                avatar=user.avatar,
+                admin=user.admin,
+                disabled=user.disabled,
+            )
+            UserDao.create_user(session, user_model)
+
+    @staticmethod
     def login(login_param: apiproto.Login) -> apiproto.Token:
         with get_database_session() as session:
             user = UserDao.get_user_by_username(session, login_param.username)
@@ -27,22 +43,6 @@ class AuthService:
                                  iss=app_config.JWT_ISS)
             token = jwt_util.generate(apiproto.TokenData(user_id=user.id, username=user.username))
         return apiproto.Token(x_token=token, expired=expired)
-
-    @staticmethod
-    def register(user: apiproto.User):
-        with get_database_session() as session:
-            exist_user = UserDao.get_user_by_username(session, user.username)
-            if exist_user is not None:
-                raise BizError('用户名已存在')
-            user_model = models.User(
-                id=user.id,
-                username=user.username,
-                password=hashing.get_password_hash(user.password),
-                avatar=user.avatar,
-                admin=user.admin,
-                disabled=user.disabled,
-            )
-            UserDao.create_user(session, user_model)
 
     @staticmethod
     def get_user_by_id(id: int) -> apiproto.User:

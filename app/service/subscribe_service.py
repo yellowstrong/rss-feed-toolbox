@@ -11,23 +11,6 @@ from app.helper.exception_helper import BizError
 class SubscribeService:
 
     @staticmethod
-    def add_subscribe(subscribe: apiproto.Subscribe):
-        with get_database_session() as session:
-            subscribe_model = models.Subscribe(
-                name=subscribe.name,
-                site_rss_id=subscribe.site_rss_id,
-                match_title=subscribe.match_title,
-                match_season=subscribe.match_season,
-                match_team=subscribe.match_team,
-                include=subscribe.include,
-                exclude=subscribe.exclude,
-                download_path=subscribe.download_path,
-                transfer_path=subscribe.transfer_path,
-                status=subscribe.status,
-            )
-            SubscribeDao.add_subscribe(session, subscribe_model)
-
-    @staticmethod
     def get_subscribes(query: apiproto.SubscribeQuery) -> apiproto.SubscribeList:
         with get_database_session() as session:
             total, result = SubscribeDao.get_subscribes(session, query.page, query.page_size)
@@ -59,33 +42,6 @@ class SubscribeService:
         return apiproto.SubscribeList(record_total=total, record_list=record_list)
 
     @staticmethod
-    def get_active_subscribes() -> Optional[list[apiproto.Subscribe]]:
-        with get_database_session() as session:
-            result = SubscribeDao.get_active_subscribes(session)
-            if len(result) == 0:
-                return None
-            return [apiproto.Subscribe(
-                id=record.id,
-                name=record.name,
-                site_rss_id=record.site_rss_id,
-                match_title=record.match_title,
-                match_season=record.match_season,
-                match_team=record.match_team,
-                include=record.include,
-                exclude=record.exclude,
-                download_path=record.download_path,
-                transfer_path=record.transfer_path,
-                status=record.status,
-                rss=apiproto.SiteRss(
-                    id=record.site_rss.id,
-                    site_id=record.site_rss.site_id,
-                    alias=record.site_rss.alias,
-                    url=record.site_rss.url,
-                    latest_pub=record.site_rss.latest_pub
-                )
-            ) for record in result]
-
-    @staticmethod
     def get_subscribe_by_id(id: int) -> apiproto.Subscribe:
         with get_database_session() as session:
             result = SubscribeDao.get_subscribe_by_id(session, id)
@@ -112,6 +68,23 @@ class SubscribeService:
             )
 
     @staticmethod
+    def add_subscribe(subscribe: apiproto.Subscribe):
+        with get_database_session() as session:
+            subscribe_model = models.Subscribe(
+                name=subscribe.name,
+                site_rss_id=subscribe.site_rss_id,
+                match_title=subscribe.match_title,
+                match_season=subscribe.match_season,
+                match_team=subscribe.match_team,
+                include=subscribe.include,
+                exclude=subscribe.exclude,
+                download_path=subscribe.download_path,
+                transfer_path=subscribe.transfer_path,
+                status=subscribe.status,
+            )
+            SubscribeDao.add_subscribe(session, subscribe_model)
+
+    @staticmethod
     def update_subscribe(subscribe: apiproto.Subscribe):
         with get_database_session() as session:
             subscribe_model = SubscribeDao.get_subscribe_by_id(session, subscribe.id)
@@ -136,6 +109,33 @@ class SubscribeService:
             if subscribe_model is None:
                 raise BizError('订阅不存在')
             SubscribeDao.delete_subscribe(session, subscribe_model)
+
+    @staticmethod
+    def get_active_subscribes() -> Optional[list[apiproto.Subscribe]]:
+        with get_database_session() as session:
+            result = SubscribeDao.get_active_subscribes(session)
+            if len(result) == 0:
+                return None
+            return [apiproto.Subscribe(
+                id=record.id,
+                name=record.name,
+                site_rss_id=record.site_rss_id,
+                match_title=record.match_title,
+                match_season=record.match_season,
+                match_team=record.match_team,
+                include=record.include,
+                exclude=record.exclude,
+                download_path=record.download_path,
+                transfer_path=record.transfer_path,
+                status=record.status,
+                rss=apiproto.SiteRss(
+                    id=record.site_rss.id,
+                    site_id=record.site_rss.site_id,
+                    alias=record.site_rss.alias,
+                    url=record.site_rss.url,
+                    latest_pub=record.site_rss.latest_pub
+                )
+            ) for record in result]
 
     @staticmethod
     def get_download_history_by_subscribe_id(subscribe_id: int) -> Optional[list[apiproto.DownloadHistory]]:

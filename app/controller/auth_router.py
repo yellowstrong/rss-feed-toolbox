@@ -20,5 +20,5 @@ def login(login_param: apiproto.Login) -> HttpResponse:
 
 
 @router.get('/user')
-def get_user_info(user:apiproto.User = Depends(get_current_user)) -> HttpResponse:
+def get_user_info(user: apiproto.User = Depends(get_current_user)) -> HttpResponse:
     return response_success(user)

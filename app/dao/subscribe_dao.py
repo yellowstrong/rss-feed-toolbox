@@ -8,10 +8,6 @@ from app.models.download_history import DownloadHistory
 class SubscribeDao:
 
     @staticmethod
-    def add_subscribe(session: Session, subscribe: Subscribe):
-        session.add(subscribe)
-
-    @staticmethod
     def get_subscribes(session: Session, page: int = 1, page_size: int = 10) -> (int, list[Subscribe]):
         query = session.query(Subscribe)
         total = query.count()
@@ -21,16 +17,14 @@ class SubscribeDao:
         return total, result
 
     @staticmethod
-    def get_active_subscribes(session: Session) -> list[Subscribe]:
-        query = session.query(Subscribe)
-        result = query.all()
-        return result
-
-    @staticmethod
     def get_subscribe_by_id(session: Session, id: int) -> Subscribe:
         query = session.query(Subscribe).filter_by(id=id)
         result = query.first()
         return result
+
+    @staticmethod
+    def add_subscribe(session: Session, subscribe: Subscribe):
+        session.add(subscribe)
 
     @staticmethod
     def update_subscribe(session: Session, subscribe: Subscribe):
@@ -39,6 +33,12 @@ class SubscribeDao:
     @staticmethod
     def delete_subscribe(session: Session, subscribe: Subscribe):
         session.delete(subscribe)
+
+    @staticmethod
+    def get_active_subscribes(session: Session) -> list[Subscribe]:
+        query = session.query(Subscribe)
+        result = query.all()
+        return result
 
     @staticmethod
     def get_download_history_by_subscribe_id(session: Session, subscribe_id: int) -> list[DownloadHistory]:

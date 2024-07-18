@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
+from sqlalchemy import desc, asc
 from app.models import Site, SiteRss
 from app.helper.exception_helper import BizError
 
@@ -7,19 +7,13 @@ from app.helper.exception_helper import BizError
 class SiteDao:
 
     @staticmethod
-    def get_all_site(session: Session, page: int = 1, page_size: int = 10) -> (int, list[Site]):
+    def get_sites(session: Session, page: int = 1, page_size: int = 10) -> (int, list[Site]):
         query = session.query(Site)
         total = query.count()
         offset = (page - 1) * page_size
-        query = query.order_by(desc(Site.id)).offset(offset).limit(page_size)
+        query = query.order_by(asc(Site.id)).offset(offset).limit(page_size)
         result = query.all()
         return total, result
-
-    @staticmethod
-    def get_all_site_rss(session: Session) -> list[SiteRss]:
-        query = session.query(SiteRss)
-        result = query.all()
-        return result
 
     @staticmethod
     def get_site_by_id(session: Session, id: int) -> Site:
@@ -46,7 +40,9 @@ class SiteDao:
             for item in to_modify:
                 if item.id and item.id == target_item.id:
                     target_item.alias = item.alias
-                    target_item.url = item.url
+                    if target_item.url != item.url:
+                        target_item.url = item.url
+                        target_item.latest_pub = None
                     session.merge(target_item)
                     deleted = False
                     break
@@ -61,6 +57,14 @@ class SiteDao:
     @staticmethod
     def delete_site(session: Session, site: Site):
         session.delete(site)
+
+    @staticmethod
+    def get_site_rss(session: Session, site_id: int = None) -> list[SiteRss]:
+        query = session.query(SiteRss)
+        if site_id:
+            query.filter_by(site_id=site_id)
+        result = query.all()
+        return result
 
     @staticmethod
     def get_site_rss_by_id(session: Session, id: int) -> SiteRss:

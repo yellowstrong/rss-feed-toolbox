@@ -12,7 +12,7 @@ def get_all_schedule() -> HttpResponse:
     return response_success(data)
 
 
-@router.get('/subscribe')
-def run_subscribe(background_tasks: BackgroundTasks) -> HttpResponse:
-    background_tasks.add_task(Scheduler().start, job_id='subscribe')
+@router.get('/run')
+def run_subscribe(id:str,background_tasks: BackgroundTasks) -> HttpResponse:
+    background_tasks.add_task(Scheduler().start, job_id=id)
     return response_success()
