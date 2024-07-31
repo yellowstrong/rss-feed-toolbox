@@ -49,3 +49,13 @@ class SubscribeDao:
     @staticmethod
     def add_download_history(session: Session, download_history: DownloadHistory):
         session.add(download_history)
+
+    @staticmethod
+    def get_download_history_by_id(session: Session, id: int):
+        query = session.query(DownloadHistory).filter_by(id=id)
+        result = query.first()
+        return result
+
+    @staticmethod
+    def delete_download_history(session: Session, exist: DownloadHistory):
+        session.delete(exist)

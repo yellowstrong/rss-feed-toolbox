@@ -10,20 +10,32 @@ class AppConfigSettings(BaseSettings):
     """应用配置"""
 
     """基础配置"""
-    NAME: str = "RSS-Feed-Toolbox"
+    TITLE: str = "RSS-Feed-Toolbox"
     HOST: str = "localhost"
     PORT: int = 8000
+    ENVIRONMENT: str = 'dev'
     DEBUG: bool = True
+    DOCS_URL: str = '/apidoc'
+    DATETIME_ZONE: str = 'Asia/Shanghai'
+    DATETIME_FORMAT: str = '%Y-%m-%d %H:%M:%S'
+    LOG_LEVEL: str = 'INFO'
+    LOG_FORMAT: str = '<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</> | <lvl>{level: <8}</> | <lvl>{message}</>'
+    LOG_STDOUT_FILENAME: str = 'fba_access.log'
+    LOG_STDERR_FILENAME: str = 'fba_error.log'
     """jwt配置"""
     JWT_ENABLE: bool = True
     JWT_SECRET_KEY: str = "YDZre6YJOx9UMec"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRED: int = 30
     JWT_ISS: str = "iOk7a1aUf9XPHtW"
-    JWT_NO_CHECK_URIS: str = "/auth/register,/auth/login,/apidoc,/openapi.json"
+    JWT_NO_CHECK_URIS: str = "/auth/register,/auth/login,/apidoc,/openapi.json,/webhook/emby"
     """数据库配置"""
     DB_URL: str = "sqlite:///database.db"
     DB_ECHO_SQL: bool = False
+    REDIS_HOST: str = '192.168.100.6'
+    REDIS_PORT: int = 6379
+    REDIS_PASSWORD: str = ''
+    REDIS_DB: int = 0
     """订阅配置"""
     SUBSCRIBE_INTERVAL: int = 15
     """网络配置"""
@@ -39,6 +51,12 @@ class AppConfigSettings(BaseSettings):
     """消息通知"""
     TELEGRAM_BOT_TOKEN: str = '6680266790:AAF9nuP5PP8msGISqYxKxzTkQVCnI6RXkZs'
     TELEGRAM_CHAT_ID: str = '677469093'
+    """媒体"""
+    RMT_MEDIA_EXT: list = ['.mp4', '.mkv', '.ts', '.iso',
+                           '.rmvb', '.avi', '.mov', '.mpeg',
+                           '.mpg', '.wmv', '.3gp', '.asf',
+                           '.m4v', '.flv', '.m2ts', '.strm',
+                           '.tp', '.f4v']
 
     @property
     def PROXY(self):

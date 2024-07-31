@@ -1,4 +1,5 @@
 import pickle
+import regex as re
 import unittest
 from app.jobs.subscribe import SubscribeJob
 from app import models
@@ -33,6 +34,12 @@ class UserDaoTestCase(unittest.TestCase):
 
     def test_refresh(self):
         SubscribeJob().refresh()
+
+    def test_regex(self):
+        file_name = '全资进组2.Quan.Zi.Jin.Zu.S02E11.2024.2160p.WEB-DL.DDP2.0.H265-HDSWEB.mkv'
+        season = re.findall(r'S(\d{2})', file_name)
+        episode = re.findall(r'E(\d{2})', file_name)
+        print(season, episode)
 
 
 if __name__ == "__main__":

@@ -1,8 +1,15 @@
+import os
 import re
+from pathlib import Path
+from urllib.parse import unquote
+
+from requests import Response
 from typing import Optional, Tuple
 from datetime import datetime
 from cachetools import cached, TTLCache
+from torrentool.torrent import Torrent
 
+from app.config.app_config import app_config
 from app.helper.request_helper import RequestHelper
 from app.helper.telegram_helper import TelegramHelper
 from app.service.site_service import SiteService
@@ -70,10 +77,24 @@ class SubscribeJob:
                         continue
                     logger.info(f'种子标题：{t.title}，匹配规则，开始下载...')
 
-                    succeed, content, err_msg = self.download_torrent(t.enclosure, t.cookie, t.ua)
+                    succeed, content, file_list, err_msg = self.download_torrent(t.enclosure, t.cookie, t.ua)
                     if not succeed:
                         logger.error(f'下载种子出错：{err_msg} - {content}')
                     else:
+                        tmp = []
+                        for file in file_list:
+                            file_base, file_extension = os.path.splitext(file)
+                            if file_extension in app_config.RMT_MEDIA_EXT:
+                                tmp.append(file)
+                        file_list = tmp
+                        histories = SubscribeService.get_download_history_by_subscribe_id(subscribe.id)
+                        for history in histories:
+                            if history.torrent_list == ','.join(file_list):
+                                logger.warn(f'检测到相同文件种子：{t.title}，删除原有种子：{history.torrent_hash}')
+                                succeed = self.qbittorrent_helper.delete_torrent(history.torrent_hash)
+                                if succeed:
+                                    logger.info(f'删除种子：{history.torrent_hash} 成功')
+                                    SubscribeService.delete_download_history_by_id(history.id)
                         download_hash = self.qbittorrent_helper.add_torrent(content)
                         if download_hash:
                             SubscribeService.add_download_history(apiproto.DownloadHistory(
@@ -81,6 +102,7 @@ class SubscribeJob:
                                 rss_title=t.title,
                                 rss_guid=t.guid,
                                 torrent_hash=download_hash,
+                                torrent_list=','.join(file_list),
                                 create_at=datetime.now()
                             ))
                             logger.info(f'种子：{t.title}，下载成功')
@@ -88,11 +110,10 @@ class SubscribeJob:
                         else:
                             self.telegram_helper.send_msg(title='下载出错', text=f'{t.title}')
 
-    @staticmethod
-    def download_torrent(enclosure: str, cookie: str = None, ua: str = None) -> \
-            Tuple[bool, Optional[str | bytes], Optional[str]]:
+    def download_torrent(self, enclosure: str, cookie: str = None, ua: str = None) -> \
+            Tuple[bool, Optional[str | bytes], Optional[list[str]], Optional[str]]:
         """
-        :return: 成功状态、种子内容、错误原因
+        :return: 成功状态、种子内容、种子文件列表、错误原因
         """
         response = RequestHelper(cookies=cookie, ua=ua).get_res(enclosure, allow_redirects=False)
         while response.status_code in [301, 302]:
@@ -100,25 +121,74 @@ class SubscribeJob:
             response = RequestHelper(cookies=cookie, ua=ua).get_res(req_url, allow_redirects=False)
         if response and response.status_code == 200:
             if not response.content:
-                return False, None, '未下载到任何数据'
+                return False, None, None, '未下载到任何数据'
             else:
                 if 'x-bittorrent' in response.headers.get(
                         'Content-Type').lower() or 'octet-stream' in response.headers.get('Content-Type').lower():
-                    return True, response.content, None
+                    file_name = self.get_url_filename(response, enclosure)
+                    file_path = Path(app_config.TEMP_PATH) / file_name
+                    file_path.write_bytes(response.content)
+                    folder_name, file_list = self.get_torrent_info(file_path)
+                    return True, response.content, file_list, None
                 else:
                     if 'text' in response.headers.get('Content-Type') or 'json' in response.headers.get('Content-Type'):
-                        return False, response.content.decode('utf-8'), '下载出错，未下载到种子'
+                        return False, response.content.decode('utf-8'), None, '下载出错，未下载到种子'
                     else:
-                        return False, None, '下载出错，未下载到种子'
+                        return False, None, None, '下载出错，未下载到种子'
         elif response is None:
-            return False, None, '无法打开链接'
+            return False, None, None, '无法打开链接'
         elif response.status_code == 429:
-            return False, None, '触发站点流控，请稍后再试'
+            return False, None, None, '触发站点流控，请稍后再试'
         else:
-            return False, None, f'下载种子出错，状态码：{response.status_code}'
+            return False, None, None, f'下载种子出错，状态码：{response.status_code}'
+
+    @staticmethod
+    def get_torrent_info(torrent_path: Path) -> Tuple[str, list[str]]:
+        if not torrent_path or not torrent_path.exists():
+            return "", []
+        try:
+            torrent_info = Torrent.from_file(torrent_path)
+            if (not torrent_info.files
+                    or (len(torrent_info.files) == 1
+                        and torrent_info.files[0].name == torrent_info.name)):
+                folder_name = ""
+                file_list = [torrent_info.name]
+            else:
+                folder_name = torrent_info.name
+                file_list = []
+                for file_info in torrent_info.files:
+                    file_path = Path(file_info.name)
+                    root_path = file_path.parts[0]
+                    if root_path == folder_name:
+                        file_list.append(str(file_path.relative_to(root_path)))
+                    else:
+                        file_list.append(file_info.name)
+            logger.debug(f"解析种子：{torrent_path.name} => 目录：{folder_name}，文件清单：{file_list}")
+            return folder_name, file_list
+        except Exception as err:
+            logger.error(f"种子文件解析失败：{str(err)}")
+            return "", []
+
+    @staticmethod
+    def get_url_filename(response: Response, url: str) -> str:
+        """获取种子文件名"""
+        if not response:
+            return ""
+        disposition = response.headers.get('content-disposition') or ""
+        file_name = re.findall(r"filename=\"?(.+)\"?", disposition)
+        if file_name:
+            file_name = unquote(str(file_name[0].encode('ISO-8859-1').decode()).split(";")[0].strip())
+            if file_name.endswith('"'):
+                file_name = file_name[:-1]
+        elif url and url.endswith(".torrent"):
+            file_name = unquote(url.split("/")[-1])
+        else:
+            file_name = str(datetime.now())
+        return file_name
 
     @staticmethod
     def get_active_subscribe() -> tuple[Optional[list[apiproto.Subscribe]], Optional[list[apiproto.SiteRss]]]:
+        """获取活动订阅"""
         active_subscribe = SubscribeService.get_active_subscribes()
         if active_subscribe is None:
             return None, None
@@ -129,6 +199,7 @@ class SubscribeJob:
     @staticmethod
     @cached(cache=TTLCache(maxsize=128, ttl=295))
     def rss(url: str, cookie: str, ua: str) -> list[types.TorrentInfo]:
+        """获取RSS"""
         logger.info(f'开始获取 {url} RSS ...')
         rss_items = RssHelper.parse(url)
         if rss_items is None:

@@ -1,7 +1,7 @@
 from app.dao.user_dao import UserDao
 from app import models
+from app.errors import BizError
 from app.helper.database_helper import get_database_session
-from app.helper.exception_helper import AuthenticationError, BizError
 from app.helper.jwt_helper import JwtHelper
 from app.config.app_config import app_config
 from app.types import apiproto

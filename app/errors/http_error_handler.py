@@ -7,19 +7,18 @@ from app.utils.response import response_fail
 
 
 def register_http_error_handler(app: FastAPI):
-
     @app.exception_handler(HTTPException)
     async def http_exception_handler(request, exc: HTTPException) -> JSONResponse:
         if exc.status_code == status.HTTP_404_NOT_FOUND:
             # 处理404错误
             return JSONResponse(
-                content=jsonable_encoder(response_fail("404 Not Found")),
+                content=jsonable_encoder(response_fail("请求资源不存在")),
                 status_code=status.HTTP_404_NOT_FOUND,
             )
         elif exc.status_code == status.HTTP_405_METHOD_NOT_ALLOWED:
             # 处理405错误
             return JSONResponse(
-                content=jsonable_encoder(response_fail("Method Not Allowed")),
+                content=jsonable_encoder(response_fail("请求方法错误")),
                 status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
             )
         else:

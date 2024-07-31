@@ -1,13 +1,13 @@
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.helper.exception_helper import AuthenticationError
+from app.errors import AuthenticationError
 from app.types.apiproto import TokenData
 from app.config.app_config import app_config
 from app.helper.jwt_helper import JwtHelper
 
 
-class JwtMiddleware(BaseHTTPMiddleware):
+class JwtAuthMiddleware(BaseHTTPMiddleware):
 
     def __init__(self, app):
         super().__init__(app)

@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.requests import Request
 from fastapi.responses import JSONResponse
 
-from app.helper.exception_helper import AuthenticationError, AuthorizationError, BizError
+from app.errors import AuthenticationError, AuthorizationError, BizError
 from app.utils.response import response_fail
 
 

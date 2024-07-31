@@ -18,3 +18,5 @@ qbittorrent-api
 torrentool
 # python-telegram-bot
 pyTelegramBotAPI
+redis
+loguru

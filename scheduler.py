@@ -4,12 +4,12 @@ from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.config.app_config import app_config
-from app.constant.time import ChinaTimeZone
 from app.jobs import subscribe, transfer
 from app.types.schedule import ScheduleInfo
 from app.helper.logger_helper import logger
 from app.utils.singleton import Singleton
 from app.utils.time import time_difference
+from app.utils.timezone import timezone
 
 
 class Scheduler(metaclass=Singleton):
@@ -37,7 +37,7 @@ class Scheduler(metaclass=Singleton):
         self.stop()
 
         self._scheduler = BackgroundScheduler(
-            timezone=ChinaTimeZone,
+            timezone=timezone.tz_info,
             executors={
                 'default': ThreadPoolExecutor(100)
             }

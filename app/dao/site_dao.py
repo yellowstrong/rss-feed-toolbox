@@ -1,7 +1,8 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc
+
+from app.errors import BizError
 from app.models import Site, SiteRss
-from app.helper.exception_helper import BizError
 
 
 class SiteDao:

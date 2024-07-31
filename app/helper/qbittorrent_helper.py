@@ -37,6 +37,14 @@ class QBittorrentHelper(metaclass=Singleton):
             logger.error(f"添加种子出错：{str(err)} - {traceback.format_exc()}")
             return None
 
+    def delete_torrent(self, hash: str, delete_file=False) -> bool:
+        try:
+            self._client.torrents_delete(delete_files=delete_file, torrent_hashes=[hash])
+            return True
+        except Exception as err:
+            logger.error(f'删除种子出错：{str(err)} - {traceback.format_exc()}')
+            return False
+
     def get_torrent_by_tags(self, tag: str):
         torrents = []
         for i in range(1, 3):

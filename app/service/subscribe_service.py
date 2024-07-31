@@ -1,11 +1,11 @@
 from typing import Optional
 
 from app import models
+from app.errors import BizError
 from app.types import apiproto
 from app.dao.subscribe_dao import SubscribeDao
 
 from app.helper.database_helper import get_database_session
-from app.helper.exception_helper import BizError
 
 
 class SubscribeService:
@@ -149,6 +149,7 @@ class SubscribeService:
                 rss_title=record.rss_title,
                 rss_guid=record.rss_guid,
                 torrent_hash=record.torrent_hash,
+                torrent_list=record.torrent_list,
                 create_at=record.create_at,
             ) for record in result]
 
@@ -160,6 +161,14 @@ class SubscribeService:
                 rss_title=download_history.rss_title,
                 rss_guid=download_history.rss_guid,
                 torrent_hash=download_history.torrent_hash,
+                torrent_list=download_history.torrent_list,
                 create_at=download_history.create_at,
             )
             SubscribeDao.add_download_history(session, download_history_model)
+
+    @staticmethod
+    def delete_download_history_by_id(id: int):
+        with get_database_session() as session:
+            exist = SubscribeDao.get_download_history_by_id(session, id)
+            if exist:
+                SubscribeDao.delete_download_history(session, exist)

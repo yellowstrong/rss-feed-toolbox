@@ -42,4 +42,5 @@ class DownloadHistory(BaseModel):
     rss_title: str = Field(description='rss标题')
     rss_guid: str = Field(default='', description='rss唯一编号')
     torrent_hash: str = Field(description='种子哈希')
+    torrent_list: str = Field(description='种子文件清单')
     create_at: datetime = Field(description='创建时间')

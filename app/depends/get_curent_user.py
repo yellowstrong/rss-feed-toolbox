@@ -1,6 +1,6 @@
 from fastapi import Request
 from app.config.app_config import app_config
-from app.helper.exception_helper import AuthenticationError
+from app.errors import AuthenticationError
 from app.helper.jwt_helper import JwtHelper
 from app.service.auth_service import AuthService
 from app.types.apiproto import TokenData

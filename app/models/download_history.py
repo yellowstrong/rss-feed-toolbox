@@ -12,6 +12,7 @@ class DownloadHistory(Base):
     rss_title = Column(String, nullable=False)
     rss_guid = Column(String)
     torrent_hash = Column(String, nullable=False)
+    torrent_list = Column(String)
     create_at = Column(DateTime, nullable=False)
 
     subscribe = relationship('Subscribe', back_populates='download_history')

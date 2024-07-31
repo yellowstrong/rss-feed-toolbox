@@ -1,7 +1,7 @@
 import time
 from typing import Any
 
-from app.helper.exception_helper import ImmediateException
+from app.errors import ImmediateException
 
 
 def retry(ExceptionToCheck: Any, tries: int = 3, delay: int = 3, backoff: int = 2, logger: Any = None):

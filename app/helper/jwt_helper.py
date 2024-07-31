@@ -4,7 +4,7 @@ from typing import Any
 from jose import jwt
 from pydantic import BaseModel
 
-from app.constant.time import ChinaTimeZone
+from app.utils.timezone import timezone
 
 
 class JwtTokenBody(BaseModel):
@@ -25,7 +25,7 @@ class JwtHelper(object):
                  secret_key: str,
                  algorithm: str = "HS256",
                  expired: int = 60,
-                 china_time_zone=ChinaTimeZone,
+                 china_time_zone=timezone.tz_info,
                  iss: str = ''):
 
         self.secretKey = secret_key
