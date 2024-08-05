@@ -1,24 +1,23 @@
-import logging
 import time
 import traceback
-from typing import Tuple, Optional
+from typing import Optional, Tuple
 import qbittorrentapi
 
 from app.helper.logger_helper import logger
-from app.utils.singleton import Singleton
+from app.types.apiproto.downloader_proto import Downloader
 from app.utils.str import StringUtil
 from app.config.app_config import app_config
 
 
-class QBittorrentHelper(metaclass=Singleton):
+class QBittorrentHelper:
     _client = None
 
-    def __init__(self):
+    def __init__(self, downloader: Downloader):
         self._client = qbittorrentapi.Client(
-            host=app_config.QB_HOST,
-            port=app_config.QB_PORT,
-            username=app_config.QB_USERNAME,
-            password=app_config.QB_PASSWORD
+            host=downloader.host,
+            port=downloader.port,
+            username=downloader.username,
+            password=downloader.password
         )
 
     def add_torrent(self, torrent: bytes) -> Optional[str]:
@@ -58,7 +57,18 @@ class QBittorrentHelper(metaclass=Singleton):
     def get_torrent_by_hash(self, torrent_hash: str):
         return self._client.torrents_info(torrent_hashes=[torrent_hash])
 
+    def get_transfer_limit(self) -> Tuple[int, int]:
+        upload_limit = self._client.transfer_upload_limit()
+        download_limit = self._client.transfer_download_limit()
+        return upload_limit, download_limit
+
+    def set_transfer_limit(self, upload_limit: int, download_limit: int) -> bool:
+        self._client.transfer_set_upload_limit(upload_limit)
+        self._client.transfer_set_download_limit(download_limit)
+        return True
+
 
 if __name__ == '__main__':
-    torrent = QBittorrentHelper().get_torrent_by_hash('5a5419741103fd4b430786f2ef71c7c8a0728fc4')
+    torrent = QBittorrentHelper(Downloader(name='test', host='192.168.100.26', port=8080, username='admin',
+                                           password='hq1998130')).set_transfer_limit(1,1)
     print(torrent)

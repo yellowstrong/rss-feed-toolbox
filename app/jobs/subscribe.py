@@ -12,6 +12,7 @@ from torrentool.torrent import Torrent
 from app.config.app_config import app_config
 from app.helper.request_helper import RequestHelper
 from app.helper.telegram_helper import TelegramHelper
+from app.service.downloader_service import DownloaderService
 from app.service.site_service import SiteService
 from app.service.subscribe_service import SubscribeService
 from app.types import apiproto
@@ -25,7 +26,8 @@ from app.helper.qbittorrent_helper import QBittorrentHelper
 class SubscribeJob:
 
     def __init__(self):
-        self.qbittorrent_helper = QBittorrentHelper()
+        downloader = DownloaderService.get_default_downloader()
+        self.qbittorrent_helper = QBittorrentHelper(downloader)
         self.telegram_helper = TelegramHelper()
 
     def refresh(self):

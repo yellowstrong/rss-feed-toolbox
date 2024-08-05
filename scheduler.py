@@ -4,7 +4,7 @@ from apscheduler.executors.pool import ThreadPoolExecutor
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.config.app_config import app_config
-from app.jobs import subscribe, transfer
+from app.jobs import subscribe, transfer, play
 from app.types.schedule import ScheduleInfo
 from app.helper.logger_helper import logger
 from app.utils.singleton import Singleton
@@ -32,6 +32,11 @@ class Scheduler(metaclass=Singleton):
                 'name': '文件转移服务',
                 'func': transfer.transfer,
                 'running': False
+            },
+            'play': {
+                'name': '播放限速',
+                'func': play.PlayJob().polling_session,
+                'running': False
             }
         }
         self.stop()
@@ -52,6 +57,18 @@ class Scheduler(metaclass=Singleton):
                 minutes=int(app_config.SUBSCRIBE_INTERVAL),
                 kwargs={
                     'job_id': 'subscribe'
+                }
+            )
+
+        if app_config.PLAY_LIMIT_INTERVAL and str(app_config.PLAY_LIMIT_INTERVAL).isdigit():
+            self._scheduler.add_job(
+                self.start,
+                'interval',
+                id='play',
+                name='播放限速',
+                minutes=int(app_config.PLAY_LIMIT_INTERVAL),
+                kwargs={
+                    'job_id': 'play'
                 }
             )
 

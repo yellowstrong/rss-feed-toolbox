@@ -36,8 +36,9 @@ class AppConfigSettings(BaseSettings):
     REDIS_PORT: int = 6379
     REDIS_PASSWORD: str = ''
     REDIS_DB: int = 0
-    """订阅配置"""
+    """调度配置"""
     SUBSCRIBE_INTERVAL: int = 15
+    PLAY_LIMIT_INTERVAL: int = 5
     """网络配置"""
     PROXY_HOST: Optional[str] = None
     """路径配置"""
@@ -57,6 +58,9 @@ class AppConfigSettings(BaseSettings):
                            '.mpg', '.wmv', '.3gp', '.asf',
                            '.m4v', '.flv', '.m2ts', '.strm',
                            '.tp', '.f4v']
+    """媒体库"""
+    EMBY_HOST: str = 'http://192.168.100.6:8096'
+    EMBY_API_KEY: str = '39326b4d92e446fb9f14b0df94a794a5'
 
     @property
     def PROXY(self):

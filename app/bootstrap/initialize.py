@@ -14,12 +14,12 @@ from scheduler import Scheduler
 
 @asynccontextmanager
 async def register_init(app: FastAPI):
-    await redis_client.open()
+    redis_client.open()
     Scheduler()
 
     yield
 
-    await redis_client.close()
+    redis_client.close()
     Scheduler().stop()
 
 

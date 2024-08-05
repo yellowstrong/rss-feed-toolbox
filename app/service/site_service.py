@@ -74,7 +74,7 @@ class SiteService:
     def update_site(site: apiproto.Site):
         with get_database_session() as session:
             site_model = SiteDao.get_site_by_id(session, site.id)
-            if site is None:
+            if site_model is None:
                 raise BizError('站点不存在')
             site_model.name = site.name
             site_model.url = site.url

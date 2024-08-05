@@ -14,11 +14,11 @@ class WebhookService:
     limit_events = ["playback.start", "playback.unpause"]
     un_limit_events = ["playback.pause", "playback.stop"]
 
-    async def do_webhook(self, json_data: Any):
+    def do_webhook(self, json_data: Any):
         event_type = json_data.get('Event', '')
         if event_type in self.limit_events or event_type in self.un_limit_events:
             session_id = json_data.get('Session', '')['Id'] or ''
-            latest_request = await redis_client.get(session_id)
+            latest_request = redis_client.get(session_id)
             if latest_request:
                 old_event_type = eval(latest_request).get('event_type', '')
                 if event_type == old_event_type:
@@ -47,7 +47,7 @@ class WebhookService:
             session_event_type = {
                 "event_type": event_type,
             }
-            await redis_client.set(session_id, json.dumps(session_event_type))
+            redis_client.set(session_id, json.dumps(session_event_type))
             msg_content = f'{subject}\n{user}\n{device}\n{client}\n{address}\n{summary}'
             self.telegram_helper.send_msg(title=title,
                                           text=msg_content,
