@@ -125,7 +125,7 @@ celerybeat.pid
 *.sage.py
 tmp
 # Environments
-.env
+config/app.env
 .venv
 env/
 venv/
@@ -165,5 +165,7 @@ cython_debug/
 #.idea/
 .well-known
 
-**/database.db
-/config
+/config/logs
+/config/temp
+/config/app.env
+/config/database.db

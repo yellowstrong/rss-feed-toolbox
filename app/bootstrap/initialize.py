@@ -4,16 +4,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
 from app.config.app_config import app_config
 from app.controller import register_routers
+from app.models import User
+from app.dao.user_dao import UserDao
+from app.helper.database_helper import get_database_session
 from app.helper.redis_helper import redis_client
 from app.middleware import ExceptionsMiddleware
 from app.middleware.jwt_auth_middleware import JwtAuthMiddleware
 from app.errors import app_error_handler, http_error_handler, validation_error_hanler
 from app.middleware.access_middleware import AccessMiddleware
+from app.utils import hashing
 from scheduler import Scheduler
 
 
 @asynccontextmanager
 async def register_init(app: FastAPI):
+    init_super_user()
     redis_client.open()
     Scheduler()
 
@@ -33,7 +38,6 @@ def register_app():
     register_middleware(app)
     register_router(app)
     register_exception(app)
-    register_logger()
     return app
 
 
@@ -66,5 +70,12 @@ def register_exception(app: FastAPI):
     validation_error_hanler.register_validation_error_handler(app)
 
 
-def register_logger() -> None:
-    pass
+def init_super_user():
+    with get_database_session() as session:
+        super_user = UserDao.get_user_by_username(session=session, username='admin')
+        if not super_user:
+            super_user_model = User(
+                username='admin',
+                password=hashing.get_password_hash('123456'),
+            )
+            UserDao.create_user(session, super_user_model)

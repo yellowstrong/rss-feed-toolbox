@@ -1,3 +1,6 @@
+import logging
+from typing import Optional
+
 from app.dao.downloader_dao import DownloaderDao
 from app.errors import BizError
 from app.types import apiproto
@@ -55,11 +58,12 @@ class DownloaderService:
             )
 
     @staticmethod
-    def get_default_downloader() -> apiproto.Downloader:
+    def get_default_downloader() -> Optional[apiproto.Downloader]:
         with get_database_session() as session:
             result = DownloaderDao.get_default_downloader(session)
             if result is None:
-                raise BizError('请设置默认下载器')
+                logging.error('未设置默认下载器，请先设置默认下载器...')
+                return None
             return apiproto.Downloader(
                 name=result.name,
                 host=result.host,

@@ -25,11 +25,6 @@ from app.helper.qbittorrent_helper import QBittorrentHelper
 
 class SubscribeJob:
 
-    def __init__(self):
-        downloader = DownloaderService.get_default_downloader()
-        self.qbittorrent_helper = QBittorrentHelper(downloader)
-        self.telegram_helper = TelegramHelper()
-
     def refresh(self):
         subscribe, site_rss = self.get_active_subscribe()
         if site_rss is None:
@@ -56,6 +51,11 @@ class SubscribeJob:
             self.match(subscribe, torrents_cache)
 
     def match(self, subscribes: list[apiproto.Subscribe], torrents: dict[int, list[types.TorrentInfo]]):
+        downloader = DownloaderService.get_default_downloader()
+        if downloader is None:
+            return
+        qbittorrent = QBittorrentHelper(downloader)
+        telegram = TelegramHelper()
         for subscribe in subscribes:
             logger.info(f'开始匹配订阅，标题：{subscribe.name} ...')
             sub_torrents = torrents.get(subscribe.site_rss_id) or []
@@ -93,11 +93,11 @@ class SubscribeJob:
                         for history in histories:
                             if history.torrent_list == ','.join(file_list):
                                 logger.warn(f'检测到相同文件种子：{t.title}，删除原有种子：{history.torrent_hash}')
-                                succeed = self.qbittorrent_helper.delete_torrent(history.torrent_hash)
+                                succeed = qbittorrent.delete_torrent(history.torrent_hash)
                                 if succeed:
                                     logger.info(f'删除种子：{history.torrent_hash} 成功')
                                     SubscribeService.delete_download_history_by_id(history.id)
-                        download_hash = self.qbittorrent_helper.add_torrent(content)
+                        download_hash = qbittorrent.add_torrent(content)
                         if download_hash:
                             SubscribeService.add_download_history(apiproto.DownloadHistory(
                                 subscribe_id=subscribe.id,
@@ -108,9 +108,9 @@ class SubscribeJob:
                                 create_at=datetime.now()
                             ))
                             logger.info(f'种子：{t.title}，下载成功')
-                            self.telegram_helper.send_msg(title='开始下载', text=f'{t.title}')
+                            telegram.send_msg(title='开始下载', text=f'{t.title}')
                         else:
-                            self.telegram_helper.send_msg(title='下载出错', text=f'{t.title}')
+                            telegram.send_msg(title='下载出错', text=f'{t.title}')
 
     def download_torrent(self, enclosure: str, cookie: str = None, ua: str = None) -> \
             Tuple[bool, Optional[str | bytes], Optional[list[str]], Optional[str]]:

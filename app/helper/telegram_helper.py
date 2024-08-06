@@ -23,10 +23,11 @@ class TelegramHelper(metaclass=Singleton):
     def send_msg(self, title: str = "", text: str = "", image: str = "") -> Optional[bool]:
 
         if not self._telegram_token or not self._telegram_chat_id:
+            logger.error('请先配置TG消息机器人TOKEN以及CHAT_ID...')
             return False
 
         if not title:
-            logger.warn("标题不能为空")
+            logger.error("标题不能为空")
             return False
 
         try:

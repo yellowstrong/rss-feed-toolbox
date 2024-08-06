@@ -1,4 +1,5 @@
 import json
+import logging
 import math
 import threading
 from typing import Any
@@ -21,12 +22,13 @@ class PlayJob:
 
     def polling_session(self):
         if self.lock.locked():
-            print("任务正在执行中...")
             return
         with self.lock:
             try:
                 self.is_running = True
-                print("任务执行开始")
+                if not app_config.EMBY_HOST and not app_config.EMBY_API_KEY:
+                    logging.error('未配置EMBY服务...')
+                    return
                 req_url = f'{app_config.EMBY_HOST}/emby/Sessions?api_key={app_config.EMBY_API_KEY}'
                 res = RequestHelper().get_res(req_url)
                 if res and res.status_code == 200:
@@ -62,7 +64,6 @@ class PlayJob:
                         TelegramHelper().send_msg(title='下载器限速', text=message)
             finally:
                 self.is_running = False
-                print("任务执行结束")
 
     def play_notify(self, json_data: Any):
         event_type = json_data.get('Event', '')
