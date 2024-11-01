@@ -30,7 +30,7 @@ class Scheduler(metaclass=Singleton):
             },
             'transfer': {
                 'name': '文件转移服务',
-                'func': transfer.transfer,
+                'func': transfer.TransferJob().do_transfer,
                 'running': False
             },
             'play': {
@@ -57,6 +57,18 @@ class Scheduler(metaclass=Singleton):
                 minutes=int(app_config.SUBSCRIBE_INTERVAL),
                 kwargs={
                     'job_id': 'subscribe'
+                }
+            )
+
+        if app_config.TRANSFER_INTERVAL and str(app_config.TRANSFER_INTERVAL).isdigit():
+            self._scheduler.add_job(
+                self.start,
+                'interval',
+                id='transfer',
+                name='文件转移',
+                minutes=int(app_config.TRANSFER_INTERVAL),
+                kwargs={
+                    'job_id': 'transfer'
                 }
             )
 

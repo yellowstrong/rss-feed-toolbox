@@ -29,16 +29,15 @@ class SubscribeJob:
         subscribe, site_rss = self.get_active_subscribe()
         if site_rss is None:
             return
-        torrents_cache = {}
+        new_torrents = {}
         for item in site_rss:
-            site = SiteService.get_site_by_id(item.site_id)
-            torrents: list[types.TorrentInfo] = self.rss(item.url, site.cookie, site.user_agent)
+            torrents: list[types.TorrentInfo] = self.rss(item.url)
             if torrents:
                 torrents = [torrent for torrent in torrents if
                             item.latest_pub is None or torrent.pubdate.replace(tzinfo=None) > item.latest_pub]
                 if torrents:
                     logger.info(f'{item.url} 有 {len(torrents)} 个新种子')
-                    torrents_cache[item.id] = torrents
+                    new_torrents[item.id] = torrents
                     new_latest_pub = max((torrent.pubdate for torrent in torrents if torrent.pubdate is not None),
                                          default=None)
                     SiteService.update_rss_latest_pub(item.id, new_latest_pub)
@@ -47,8 +46,8 @@ class SubscribeJob:
                     continue
             else:
                 logger.info(f'{item.url} 没有获取到种子')
-        if torrents_cache:
-            self.match(subscribe, torrents_cache)
+        if new_torrents:
+            self.match(subscribe, new_torrents)
 
     def match(self, subscribes: list[apiproto.Subscribe], torrents: dict[int, list[types.TorrentInfo]]):
         downloader = DownloaderService.get_default_downloader()
@@ -57,12 +56,12 @@ class SubscribeJob:
         qbittorrent = QBittorrentHelper(downloader)
         telegram = TelegramHelper()
         for subscribe in subscribes:
-            logger.info(f'开始匹配订阅，标题：{subscribe.name} ...')
+            logger.info(f'开始匹配订阅，标题：{subscribe.media_name} ...')
             sub_torrents = torrents.get(subscribe.site_rss_id) or []
             if len(sub_torrents) > 0:
                 logger.debug(f'开始匹配订阅RSS：{subscribe.rss.alias}，本次新种子共计 {len(sub_torrents)} 个...')
-                includes = subscribe.include.split(',')
-                excludes = subscribe.exclude.split(',')
+                includes = subscribe.include.split(',') if subscribe.include else []
+                excludes = subscribe.exclude.split(',') if subscribe.exclude else []
                 for t in sub_torrents:
                     if not re.search(r'%s' % subscribe.match_title, t.title, re.I):
                         logger.info(f'种子标题：{t.title}，不符合匹配标题，排除...')
@@ -79,7 +78,7 @@ class SubscribeJob:
                         continue
                     logger.info(f'种子标题：{t.title}，匹配规则，开始下载...')
 
-                    succeed, content, file_list, err_msg = self.download_torrent(t.enclosure, t.cookie, t.ua)
+                    succeed, content, file_list, err_msg = self.download_torrent(t.enclosure)
                     if not succeed:
                         logger.error(f'下载种子出错：{err_msg} - {content}')
                     else:
@@ -89,22 +88,23 @@ class SubscribeJob:
                             if file_extension in app_config.RMT_MEDIA_EXT:
                                 tmp.append(file)
                         file_list = tmp
-                        histories = SubscribeService.get_download_history_by_subscribe_id(subscribe.id)
+                        histories = SubscribeService.get_subscribe_history_by_subscribe_id(subscribe.id)
                         for history in histories:
                             if history.torrent_list == ','.join(file_list):
                                 logger.warn(f'检测到相同文件种子：{t.title}，删除原有种子：{history.torrent_hash}')
                                 succeed = qbittorrent.delete_torrent(history.torrent_hash)
                                 if succeed:
                                     logger.info(f'删除种子：{history.torrent_hash} 成功')
-                                    SubscribeService.delete_download_history_by_id(history.id)
+                                    SubscribeService.delete_subscribe_history_by_id(history.id)
                         download_hash = qbittorrent.add_torrent(content)
                         if download_hash:
-                            SubscribeService.add_download_history(apiproto.DownloadHistory(
+                            SubscribeService.add_subscribe_history(apiproto.SubscribeHistory(
                                 subscribe_id=subscribe.id,
                                 rss_title=t.title,
-                                rss_guid=t.guid,
+                                rss_pubdate=t.pubdate,
+                                downloader_id=downloader.id,
                                 torrent_hash=download_hash,
-                                torrent_list=','.join(file_list),
+                                torrent_file=','.join(file_list),
                                 create_at=datetime.now()
                             ))
                             logger.info(f'种子：{t.title}，下载成功')
@@ -112,15 +112,15 @@ class SubscribeJob:
                         else:
                             telegram.send_msg(title='下载出错', text=f'{t.title}')
 
-    def download_torrent(self, enclosure: str, cookie: str = None, ua: str = None) -> \
+    def download_torrent(self, enclosure: str) -> \
             Tuple[bool, Optional[str | bytes], Optional[list[str]], Optional[str]]:
         """
         :return: 成功状态、种子内容、种子文件列表、错误原因
         """
-        response = RequestHelper(cookies=cookie, ua=ua).get_res(enclosure, allow_redirects=False)
+        response = RequestHelper().get_res(enclosure, allow_redirects=False)
         while response.status_code in [301, 302]:
             req_url = response.headers['Location']
-            response = RequestHelper(cookies=cookie, ua=ua).get_res(req_url, allow_redirects=False)
+            response = RequestHelper().get_res(req_url, allow_redirects=False)
         if response and response.status_code == 200:
             if not response.content:
                 return False, None, None, '未下载到任何数据'
@@ -200,7 +200,7 @@ class SubscribeJob:
 
     @staticmethod
     @cached(cache=TTLCache(maxsize=128, ttl=295))
-    def rss(url: str, cookie: str, ua: str) -> list[types.TorrentInfo]:
+    def rss(url: str) -> list[types.TorrentInfo]:
         """获取RSS"""
         logger.info(f'开始获取 {url} RSS ...')
         rss_items = RssHelper.parse(url)
@@ -216,12 +216,8 @@ class SubscribeJob:
             torrent_info = types.TorrentInfo(
                 title=item.get("title"),
                 enclosure=item.get("enclosure"),
-                page_url=item.get("link"),
                 size=item.get("size"),
-                guid=item.get("guid"),
                 pubdate=item.get("pubdate") if item.get("pubdate") else None,
-                cookie=cookie,
-                ua=ua
             )
             ret_torrents.append(torrent_info)
         return ret_torrents

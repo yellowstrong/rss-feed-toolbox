@@ -11,11 +11,11 @@ ENV LANG="C.UTF-8" \
     TERM="xterm" \
     PUID=0 \
     PGID=0 \
-    UMASK=000 \
+    UMASK=000
 
 WORKDIR /app
 
-RUN apt-get update -y && apt-get -y install nginx locales gosu gcc git curl busybox && \
+RUN apt-get update -y && apt-get -y install nginx locales gosu gcc git curl busybox jq && \
     rm -rf \
         /tmp/* \
         /rssfeedtoolbox/.cache \
@@ -33,7 +33,7 @@ RUN pip install --upgrade pip && pip install -r requirements.txt \
 
 COPY . .
 
-RUN cp -f /app/nginx.conf /etc/nginx/nginx.conf \
+RUN echo "Force cache bust" && cp -f /app/nginx.conf /etc/nginx/conf.d/nginx.conf \
     && cp -f /app/entrypoint /entrypoint \
     && chmod +x /entrypoint \
     && groupadd -r rssfeedtoolbox -g 911 \

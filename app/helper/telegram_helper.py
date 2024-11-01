@@ -47,7 +47,7 @@ class TelegramHelper(metaclass=Singleton):
     @retry(Exception, logger=logger)
     def __send_request(self, userid: str, caption="", image='') -> bool:
         if image:
-            res = RequestHelper(proxies=app_config.PROXY).get_res(image)
+            res = RequestHelper().get_res(image)
             if res is None:
                 raise Exception("获取图片失败")
             if res.content:

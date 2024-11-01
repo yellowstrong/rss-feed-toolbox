@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+import sys
 from pathlib import Path
 from typing import List, Tuple
 
@@ -13,6 +14,13 @@ class SystemHelper:
         判断是否为Docker环境
         """
         return Path("/.dockerenv").exists()
+
+    @staticmethod
+    def is_frozen() -> bool:
+        """
+        判断是否为冻结的二进制文件
+        """
+        return True if getattr(sys, 'frozen', False) else False
 
     @staticmethod
     def copy(src: Path, dest: Path) -> Tuple[int, str]:

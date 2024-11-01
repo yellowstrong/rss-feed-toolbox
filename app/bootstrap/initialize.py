@@ -1,4 +1,8 @@
+import signal
+import sys
 from contextlib import asynccontextmanager
+from types import FrameType
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.staticfiles import StaticFiles
@@ -7,7 +11,6 @@ from app.controller import register_routers
 from app.models import User
 from app.dao.user_dao import UserDao
 from app.helper.database_helper import get_database_session
-from app.helper.redis_helper import redis_client
 from app.middleware import ExceptionsMiddleware
 from app.middleware.jwt_auth_middleware import JwtAuthMiddleware
 from app.errors import app_error_handler, http_error_handler, validation_error_hanler
@@ -19,12 +22,9 @@ from scheduler import Scheduler
 @asynccontextmanager
 async def register_init(app: FastAPI):
     init_super_user()
-    redis_client.open()
     Scheduler()
-
     yield
 
-    redis_client.close()
     Scheduler().stop()
 
 
@@ -79,3 +79,4 @@ def init_super_user():
                 password=hashing.get_password_hash('123456'),
             )
             UserDao.create_user(session, super_user_model)
+

@@ -16,7 +16,7 @@ chardet
 dateparser
 qbittorrent-api
 torrentool
-# python-telegram-bot
 pyTelegramBotAPI
 redis
+types-redis
 loguru

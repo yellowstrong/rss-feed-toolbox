@@ -2,7 +2,7 @@ from typing import Union, Any, Optional
 
 import requests
 import urllib3
-from requests import Session, Response
+from requests import Response
 from urllib3.exceptions import InsecureRequestWarning
 
 from app.helper.logger_helper import logger
@@ -13,16 +13,12 @@ urllib3.disable_warnings(InsecureRequestWarning)
 class RequestHelper:
     _headers: dict = None
     _cookies: Union[str, dict] = None
-    _proxies: dict = None
     _timeout: int = 20
-    _session: Session = None
 
     def __init__(self,
                  headers: dict = None,
                  ua: str = None,
                  cookies: Union[str, dict] = None,
-                 proxies: dict = None,
-                 session: Session = None,
                  timeout: int = None,
                  referer: str = None,
                  content_type: str = None,
@@ -43,21 +39,13 @@ class RequestHelper:
                 self._cookies = self.cookie_parse(cookies)
             else:
                 self._cookies = cookies
-        if proxies:
-            self._proxies = proxies
-        if session:
-            self._session = session
         if timeout:
             self._timeout = timeout
 
     def request(self, method: str, url: str, raise_exception: bool = False, **kwargs) -> Optional[Response]:
-        if self._session is None:
-            req_method = requests.request
-        else:
-            req_method = self._session.request
+        req_method = requests.request
         kwargs.setdefault("headers", self._headers)
         kwargs.setdefault("cookies", self._cookies)
-        kwargs.setdefault("proxies", self._proxies)
         kwargs.setdefault("timeout", self._timeout)
         kwargs.setdefault("verify", False)
         kwargs.setdefault("stream", False)

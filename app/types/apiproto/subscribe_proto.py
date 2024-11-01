@@ -11,7 +11,8 @@ class SubscribeQuery(BaseModel):
 
 class Subscribe(BaseModel):
     id: Optional[int] = Field(default=None, description='id')
-    name: str = Field(description='订阅名称')
+    media_name: str = Field(description='媒体名称')
+    media_tmdb_id: Optional[int] = Field(description='媒体TMDBID')
     site_rss_id: int = Field(description='关联RSS')
 
     match_title: str = Field(description='匹配标题')
@@ -19,9 +20,6 @@ class Subscribe(BaseModel):
     match_team: Optional[str] = Field(default=None, description='制作组')
     include: Optional[str] = Field(default=None, description='包含')
     exclude: Optional[str] = Field(default=None, description='排除')
-
-    download_path: Optional[str] = Field(default=None, description='下载路径')
-    transfer_path: Optional[str] = Field(default=None, description='转移路径')
 
     status: bool = Field(default=True, description='状态')
 
@@ -36,11 +34,17 @@ class SubscribeList(BaseModel):
     record_list: list[Subscribe] = Field(default=[])
 
 
-class DownloadHistory(BaseModel):
+class SubscribeHistory(BaseModel):
     id: Optional[int] = Field(default=None, description='id')
     subscribe_id: int = Field(description='关联订阅')
     rss_title: str = Field(description='rss标题')
-    rss_guid: str = Field(default='', description='rss唯一编号')
+    rss_pubdate: datetime = Field(description='发布时间')
+    downloader_id: int = Field(description='下载器ID')
     torrent_hash: str = Field(description='种子哈希')
-    torrent_list: str = Field(description='种子文件清单')
+    torrent_file: str = Field(description='种子文件清单')
     create_at: datetime = Field(description='创建时间')
+
+    subscribe: Optional[Subscribe] = Field(default=None, description='订阅信息')
+
+    class Config:
+        from_attributes = True

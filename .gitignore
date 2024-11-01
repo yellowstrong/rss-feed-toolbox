@@ -169,3 +169,5 @@ cython_debug/
 /config/temp
 /config/app.env
 /config/database.db
+
+.python-version

@@ -6,7 +6,7 @@ usermod -o -u "${PUID}" rssfeedtoolbox
 chown -R rssfeedtoolbox:rssfeedtoolbox \
     "${HOME}" \
     /app \
-    /public \
+    /frontend \
     /config \
     /var/lib/nginx \
     /var/log/nginx
@@ -16,4 +16,4 @@ nginx
 
 umask "${UMASK}"
 
-alembic upgrade head && uvicorn main:app
+alembic upgrade head && exec gosu rssfeedtoolbox:rssfeedtoolbox python3 /app/main.py

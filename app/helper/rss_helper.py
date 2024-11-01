@@ -12,12 +12,12 @@ from app.utils.str import StringUtil
 class RssHelper:
 
     @staticmethod
-    def parse(url, timeout: int = 15) -> list[dict] | None:
+    def parse(url) -> list[dict] | None:
         ret_array: list = []
         if not url:
             return []
         try:
-            ret = RequestHelper(proxies=app_config.PROXY if app_config.PROXY else None, timeout=timeout).get_res(url)
+            ret = RequestHelper().get_res(url)
             if not ret:
                 return []
         except Exception as err:
@@ -70,9 +70,6 @@ class RssHelper:
                         tmp_dict = {'title': title,
                                     'enclosure': enclosure,
                                     'size': size,
-                                    'description': description,
-                                    'link': link,
-                                    'guid': guid,
                                     'pubdate': pubdate}
                         ret_array.append(tmp_dict)
                     except Exception as e1:

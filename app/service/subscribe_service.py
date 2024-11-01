@@ -20,15 +20,14 @@ class SubscribeService:
             for record in result:
                 tmp = apiproto.Subscribe(
                     id=record.id,
-                    name=record.name,
+                    media_name=record.media_name,
+                    media_tmdb_id=record.media_tmdb_id,
                     site_rss_id=record.site_rss_id,
                     match_title=record.match_title,
                     match_season=record.match_season,
                     match_team=record.match_team,
                     include=record.include,
                     exclude=record.exclude,
-                    download_path=record.download_path,
-                    transfer_path=record.transfer_path,
                     status=record.status,
                     rss=apiproto.SiteRss(
                         id=record.site_rss.id,
@@ -49,15 +48,14 @@ class SubscribeService:
                 raise BizError('订阅不存在')
             return apiproto.Subscribe(
                 id=result.id,
-                name=result.name,
+                media_name=result.media_name,
+                media_tmdb_id=result.media_tmdb_id,
                 site_rss_id=result.site_rss_id,
                 match_title=result.match_title,
                 match_season=result.match_season,
                 match_team=result.match_team,
                 include=result.include,
                 exclude=result.exclude,
-                download_path=result.download_path,
-                transfer_path=result.transfer_path,
                 status=result.status,
                 rss=apiproto.SiteRss(
                     id=result.site_rss.id,
@@ -71,15 +69,14 @@ class SubscribeService:
     def add_subscribe(subscribe: apiproto.Subscribe):
         with get_database_session() as session:
             subscribe_model = models.Subscribe(
-                name=subscribe.name,
+                media_name=subscribe.media_name,
+                media_tmdb_id=subscribe.media_tmdb_id,
                 site_rss_id=subscribe.site_rss_id,
                 match_title=subscribe.match_title,
                 match_season=subscribe.match_season,
                 match_team=subscribe.match_team,
                 include=subscribe.include,
                 exclude=subscribe.exclude,
-                download_path=subscribe.download_path,
-                transfer_path=subscribe.transfer_path,
                 status=subscribe.status,
             )
             SubscribeDao.add_subscribe(session, subscribe_model)
@@ -90,15 +87,14 @@ class SubscribeService:
             subscribe_model = SubscribeDao.get_subscribe_by_id(session, subscribe.id)
             if subscribe_model is None:
                 raise BizError('订阅不存在')
-            subscribe_model.name = subscribe.name
+            subscribe_model.media_name = subscribe.media_name
+            subscribe_model.media_tmdb_id = subscribe.media_tmdb_id
             subscribe_model.site_rss_id = subscribe.site_rss_id
             subscribe_model.match_title = subscribe.match_title
             subscribe_model.match_season = subscribe.match_season
             subscribe_model.match_team = subscribe.match_team
             subscribe_model.include = subscribe.include
             subscribe_model.exclude = subscribe.exclude
-            subscribe_model.download_path = subscribe.download_path
-            subscribe_model.transfer_path = subscribe.transfer_path
             subscribe_model.status = subscribe.status
             SubscribeDao.update_subscribe(session, subscribe_model)
 
@@ -118,15 +114,14 @@ class SubscribeService:
                 return None
             return [apiproto.Subscribe(
                 id=record.id,
-                name=record.name,
+                media_name=record.media_name,
+                media_tmdb_id=record.media_tmdb_id,
                 site_rss_id=record.site_rss_id,
                 match_title=record.match_title,
                 match_season=record.match_season,
                 match_team=record.match_team,
                 include=record.include,
                 exclude=record.exclude,
-                download_path=record.download_path,
-                transfer_path=record.transfer_path,
                 status=record.status,
                 rss=apiproto.SiteRss(
                     id=record.site_rss.id,
@@ -138,37 +133,64 @@ class SubscribeService:
             ) for record in result]
 
     @staticmethod
-    def get_download_history_by_subscribe_id(subscribe_id: int) -> Optional[list[apiproto.DownloadHistory]]:
+    def get_subscribe_history_by_subscribe_id(subscribe_id: int) -> Optional[list[apiproto.SubscribeHistory]]:
         with get_database_session() as session:
-            result = SubscribeDao.get_download_history_by_subscribe_id(session, subscribe_id)
+            result = SubscribeDao.get_subscribe_history_by_subscribe_id(session, subscribe_id)
             if result is None:
                 return None
-            return [apiproto.DownloadHistory(
+            return [apiproto.SubscribeHistory(
                 id=record.id,
                 subscribe_id=record.subscribe_id,
                 rss_title=record.rss_title,
-                rss_guid=record.rss_guid,
+                rss_pubdate=record.rss_pubdate,
+                downloader_id=record.downloader_id,
                 torrent_hash=record.torrent_hash,
-                torrent_list=record.torrent_list,
+                torrent_file=record.torrent_file,
                 create_at=record.create_at,
             ) for record in result]
 
     @staticmethod
-    def add_download_history(download_history: apiproto.DownloadHistory):
+    def add_subscribe_history(subscribe_history: apiproto.SubscribeHistory):
         with get_database_session() as session:
-            download_history_model = models.DownloadHistory(
-                subscribe_id=download_history.subscribe_id,
-                rss_title=download_history.rss_title,
-                rss_guid=download_history.rss_guid,
-                torrent_hash=download_history.torrent_hash,
-                torrent_list=download_history.torrent_list,
-                create_at=download_history.create_at,
+            history_model = models.SubscribeHistory(
+                id=subscribe_history.id,
+                subscribe_id=subscribe_history.subscribe_id,
+                rss_title=subscribe_history.rss_title,
+                rss_pubdate=subscribe_history.rss_pubdate,
+                downloader_id=subscribe_history.downloader_id,
+                torrent_hash=subscribe_history.torrent_hash,
+                torrent_file=subscribe_history.torrent_file,
+                create_at=subscribe_history.create_at,
             )
-            SubscribeDao.add_download_history(session, download_history_model)
+            SubscribeDao.add_subscribe_history(session, history_model)
 
     @staticmethod
-    def delete_download_history_by_id(id: int):
+    def delete_subscribe_history_by_id(id: int):
         with get_database_session() as session:
-            exist = SubscribeDao.get_download_history_by_id(session, id)
+            exist = SubscribeDao.get_subscribe_history_by_id(session, id)
             if exist:
-                SubscribeDao.delete_download_history(session, exist)
+                exist.deleted = True
+                SubscribeDao.delete_subscribe_history(session, exist)
+
+    @staticmethod
+    def get_all_untransfer_history() -> Optional[list[apiproto.SubscribeHistory]]:
+        with get_database_session() as session:
+            result = SubscribeDao.get_all_untransfer_history(session)
+            if len(result) == 0:
+                return []
+            else:
+                record_list: list[apiproto.SubscribeHistory] = []
+                for record in result:
+                    tmp = apiproto.SubscribeHistory(
+                        id=record.id,
+                        subscribe_id=record.subscribe_id,
+                        rss_title=record.rss_title,
+                        rss_pubdate=record.rss_pubdate,
+                        downloader_id=record.downloader_id,
+                        torrent_hash=record.torrent_hash,
+                        torrent_file=record.torrent_file,
+                        create_at=record.create_at,
+                        subscribe=record.subscribe
+                    )
+                    record_list.append(tmp)
+                return record_list

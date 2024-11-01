@@ -2,7 +2,8 @@ from sqlalchemy import desc
 from sqlalchemy.orm import Session
 
 from app.models.subscribe import Subscribe
-from app.models.download_history import DownloadHistory
+from app.models.subscribe_history import SubscribeHistory
+from app.models.transfer_record import TransferRecord
 
 
 class SubscribeDao:
@@ -41,21 +42,30 @@ class SubscribeDao:
         return result
 
     @staticmethod
-    def get_download_history_by_subscribe_id(session: Session, subscribe_id: int) -> list[DownloadHistory]:
-        query = session.query(DownloadHistory).filter_by(subscribe_id=subscribe_id)
+    def get_subscribe_history_by_subscribe_id(session: Session, subscribe_id: int) -> list[SubscribeHistory]:
+        query = session.query(SubscribeHistory).filter(SubscribeHistory.subscribe_id == subscribe_id,
+                                                       SubscribeHistory.deleted != True)
         result = query.all()
         return result
 
     @staticmethod
-    def add_download_history(session: Session, download_history: DownloadHistory):
-        session.add(download_history)
+    def add_subscribe_history(session: Session, subscribe_history: SubscribeHistory):
+        session.add(subscribe_history)
 
     @staticmethod
-    def get_download_history_by_id(session: Session, id: int):
-        query = session.query(DownloadHistory).filter_by(id=id)
+    def get_subscribe_history_by_id(session: Session, id: int):
+        query = session.query(SubscribeHistory).filter_by(id=id)
         result = query.first()
         return result
 
     @staticmethod
-    def delete_download_history(session: Session, exist: DownloadHistory):
-        session.delete(exist)
+    def delete_subscribe_history(session: Session, exist: SubscribeHistory):
+        session.merge(exist)
+
+    @staticmethod
+    def get_all_untransfer_history(session: Session) -> list[SubscribeHistory]:
+        query = (session.query(SubscribeHistory)
+                 .outerjoin(TransferRecord, TransferRecord.subscribe_history_id == SubscribeHistory.id)
+                 .filter(TransferRecord.id == None))
+        result = query.all()
+        return result

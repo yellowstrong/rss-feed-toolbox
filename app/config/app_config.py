@@ -1,3 +1,5 @@
+import logging
+import threading
 from pathlib import Path
 from typing import Optional
 
@@ -11,8 +13,8 @@ class AppConfigSettings(BaseSettings):
 
     """基础配置"""
     TITLE: str = "RSS-Feed-Toolbox"
-    HOST: str = "localhost"
-    PORT: int = 8000
+    HOST: str = "0.0.0.0"
+    PORT: int = 3031
     ENVIRONMENT: str = 'dev'
     DEBUG: bool = True
     DOCS_URL: str = '/apidoc'
@@ -33,6 +35,7 @@ class AppConfigSettings(BaseSettings):
     REDIS_DB: Optional[int] = None
     """调度配置"""
     SUBSCRIBE_INTERVAL: Optional[int] = None
+    TRANSFER_INTERVAL: Optional[int] = None
     PLAY_LIMIT_INTERVAL: Optional[int] = None
     """网络配置"""
     PROXY_HOST: Optional[str] = None
@@ -53,6 +56,11 @@ class AppConfigSettings(BaseSettings):
     EMBY_HOST: Optional[str] = None
     EMBY_API_KEY: Optional[str] = None
     LIMIT_IP: Optional[str] = None
+    """TMDB"""
+    TMDB_API_URL:str = 'https://api.themoviedb.org'
+    TMDB_IMG_URL:str = 'https://image.tmdb.org'
+    TMDB_API_KEY:str = '9111e0bf793ca6e181e096c5e9deee97'
+
 
     @property
     def PROXY(self):
@@ -66,6 +74,10 @@ class AppConfigSettings(BaseSettings):
     @property
     def ROOT_PATH(self):
         return Path(__file__).parents[2]
+
+    @property
+    def INNER_CONFIG_PATH(self):
+        return self.ROOT_PATH / "config"
 
     @property
     def CONFIG_PATH(self):

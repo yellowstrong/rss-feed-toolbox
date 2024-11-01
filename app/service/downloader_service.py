@@ -65,6 +65,7 @@ class DownloaderService:
                 logging.error('未设置默认下载器，请先设置默认下载器...')
                 return None
             return apiproto.Downloader(
+                id=result.id,
                 name=result.name,
                 host=result.host,
                 port=result.port,
