@@ -20,3 +20,4 @@ pyTelegramBotAPI
 redis
 types-redis
 loguru
+python-115
